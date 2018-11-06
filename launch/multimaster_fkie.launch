@@ -1,0 +1,4 @@
+<launch>
+    <include file="$(find multirobot_costmap_projector)/launch/master_discovery.launch"/>
+    <include file="$(find multirobot_costmap_projector)/launch/master_sync.launch"/>
+</launch>
