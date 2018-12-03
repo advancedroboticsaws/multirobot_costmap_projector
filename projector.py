@@ -236,35 +236,40 @@ def main(args):
     # Intialize the DockingNavigation object
     # docking_navigation = DockingNavigation(param_dict)
     projectBlockPub = rospy.Publisher('/move_base/global_costmap/fake_obstacle_layer/markedPoses', PoseArray, queue_size=1)
-    projectSyncPub  = rospy.Publisher('/projector_sync', PoseStamped, queue_size=1)
+    projectSyncPub  = rospy.Publisher('/multirobot/position', PoseArray, queue_size=1)
     
     # Call process at 10Hz
     r = rospy.Rate(10.0)
     while not rospy.is_shutdown():
-        
         pos_arr = PoseArray()
         rc = get_pose2D_base_in_map("map", "base_footprint")
         if rc == None : 
             r.sleep()
             continue
         #----publish to sync -----#
-        pos = PoseStamped()
-        pos.pose.position.x = [0,0]
-        pos.pose.position.y = [1,0]
-        projectSyncPub.publish(pos)
+        #pos = PoseStamped()
+        #pos.pose.position.x = [0,0]
+        #pos.pose.position.y = [1,0]
+        #projectSyncPub.publish(pos)
         # print rc[0,0] , rc[1,0], rc[2,0]
         #--------------  Rotate and translate footprint --------------#
         rotation_matrix = np.matrix([ [math.cos(rc[2,0]), -math.sin(rc[2,0])],  [math.sin(rc[2,0]), math.cos(rc[2,0])] ])
         translation_matrix =  np.matrix([[rc[0,0]], [rc[1,0]]])
         # print rotation_matrix
         footprint_transformed = []
+        footprint_sync = PoseArray()
         for i in footprint:
             input_matrix = np.matrix([[i[0]] , [i[1]]]) # ( x , y )
             # print input_matrix
             ### Calcuate
             output = (rotation_matrix * input_matrix  + translation_matrix).A1 # Flatten result
+            tmp = Pose()
+            tmp.position.x = output[0]
+            tmp.position.y = output[1]
+            footprint_sync.poses.append(tmp)
             footprint_transformed.append([digitalize(output[0]) , digitalize(output[1])])
-    
+        projectSyncPub.publish(footprint_sync)
+
         print "footprint_transformed: ", footprint_transformed
         #-----------  expand_footprint  -------------#
         t_start = time.time()
