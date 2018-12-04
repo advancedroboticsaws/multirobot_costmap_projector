@@ -23,6 +23,7 @@ import numpy as np
 from tf import transformations
 import tf2_ros
 import time
+from multirobot_costmap_projector.msg import PublicFootprint
 
 def sign (x):
     if x < 0 : 
@@ -30,8 +31,13 @@ def sign (x):
     else :
         return 1 
 
+#----- Load parameters ------# 
+robot_id = "AMR250_4" # Should Load at robot_unque parameters 
+map_id = "1F" # Should get from navi_center 
+
 footprint= [[-0.57,0.36],[0.57,0.36],[0.57,-0.36],[-0.57,-0.36]]
 resolution = 0.05
+
 tf_buffer = tf2_ros.Buffer()
 tf_listener = tf2_ros.TransformListener(tf_buffer)
 def expand_footprint(footprint_transformed):
@@ -236,7 +242,7 @@ def main(args):
     # Intialize the DockingNavigation object
     # docking_navigation = DockingNavigation(param_dict)
     projectBlockPub = rospy.Publisher('/move_base/global_costmap/fake_obstacle_layer/markedPoses', PoseArray, queue_size=1)
-    projectSyncPub  = rospy.Publisher('/multirobot/position', PoseArray, queue_size=1)
+    projectSyncPub  = rospy.Publisher('/multirobot/position', PublicFootprint, queue_size=1)
     
     # Call process at 10Hz
     r = rospy.Rate(10.0)
@@ -257,17 +263,22 @@ def main(args):
         translation_matrix =  np.matrix([[rc[0,0]], [rc[1,0]]])
         # print rotation_matrix
         footprint_transformed = []
-        footprint_sync = PoseArray()
+        footprint_sync = PublicFootprint()
         for i in footprint:
             input_matrix = np.matrix([[i[0]] , [i[1]]]) # ( x , y )
             # print input_matrix
             ### Calcuate
             output = (rotation_matrix * input_matrix  + translation_matrix).A1 # Flatten result
-            tmp = Pose()
-            tmp.position.x = output[0]
-            tmp.position.y = output[1]
-            footprint_sync.poses.append(tmp)
+            tmp = Pose2D()
+            tmp.x = output[0]
+            tmp.y = output[1]
+            footprint_sync.footprints.append(tmp)
             footprint_transformed.append([digitalize(output[0]) , digitalize(output[1])])
+        #--- Add header to publicFootprint ----# 
+        footprint_sync.header.stamp = rospy.Time.now()
+        footprint_sync.header.frame_id = 'map'
+        footprint_sync.map_id = map_id
+        footprint_sync.robot_id = robot_id
         projectSyncPub.publish(footprint_sync)
 
         print "footprint_transformed: ", footprint_transformed
