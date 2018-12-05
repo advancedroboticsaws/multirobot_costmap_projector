@@ -1,7 +1,11 @@
 <?xml version="1.0"?>
 <launch>
+    <rosparam command="load" file="$(find robot_unique_parameters)/service_setting/service_setting.yaml"/>
     <include file="$(find multirobot_costmap_projector)/launch/master_discovery.launch"/>
     <include file="$(find multirobot_costmap_projector)/launch/master_sync.launch"/>
-    <!-- mux (multiplexer) for /cmd_vel -->
-    <node pkg="multirobot_costmap_projector" type="projector.py" name="projector"/>
+    <!-- mux (multiplexer) for /cmd_vel     "multirobot_costmap_projector"      -->  
+    <node pkg="multirobot_costmap_projector" type="projector.py" name="$(anon projector)" output="screen">
+    <!--node pkg="multirobot_costmap_projector" type="projector.py" name="$(env ENVIRONMENT_VARIABLE)" output="screen"-->
+    <param name="foo" value="$(optenv NUM_CPUS 1)" />
+    
 </launch>

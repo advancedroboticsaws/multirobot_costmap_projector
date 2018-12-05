@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <launch>
+  
   <node name="master_discovery_lucky" pkg="master_discovery_fkie" type="master_discovery">
     <param name="log_level" value="INFO" />
     <!-- Specifies the multicast group. You can bind the to defined interface by adding @address to the group -->
