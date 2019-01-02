@@ -7,6 +7,8 @@ import Queue
 import sys
 import rospy
 import math
+import rospkg
+import yaml
 
 from geometry_msgs.msg import (
     PoseArray,
@@ -32,7 +34,16 @@ def sign (x):
         return 1 
 
 #----- Load parameters ------# 
-robot_id = "AMR250_4" # Should Load at robot_unque parameters 
+
+ros_package = rospkg.RosPack()
+param_path = ros_package.get_path('robot_unique_parameters')
+param_path += '/service_setting/service_setting.yaml'
+f = open(param_path, 'r')
+params_raw = f.read()
+f.close()
+robot_id = yaml.load(params_raw)['AMR_ID']
+
+# robot_id = "AMR250_4" # Should Load at robot_unque parameters 
 map_id = "1F" # Should get from navi_center 
 
 footprint= [[-0.57,0.36],[0.57,0.36],[0.57,-0.36],[-0.57,-0.36]]
@@ -207,31 +218,33 @@ def digitalize(v_in, resolution = resolution):
     # print "[digitalize] " , round(v_in/resolution, 0)
     v_in -= resolution/2
     return round(round(v_in/resolution, 0) *resolution + resolution/2, len(str(resolution))-1)
+
+
 def main(args):
     rospy.init_node('projector')
     '''
     #----------   Parameters Loading  ------------#
     # LOCAL paramters loading from package /param
     #param_path = rospy.get_param("~param_path")
-    f = open(param_path,'r')
-    params_raw = f.read()
-    f.close()
-    param_dict = yaml.load(params_raw)
+    #f = open(param_path,'r')
+    #params_raw = f.read()
+    #f.close()
+    #param_dict = yaml.load(params_raw)
 
     # GLOBAL paramters loading from rosparam server
     is_parameters_set = False
     while not is_parameters_set:
         try:
             #Find all param relative to the namespace.
-            param_dict.update(rospy.get_param(rospy.get_name())) # "/docking_navigation"
+            param_dict.update(rospy.get_param(rospy.get_name())) # "/projector"
             is_parameters_set = True
         except:
-            rospy.loginfo("docking_navigation parameters are not found in rosparam server, keep on trying...")
+            rospy.loginfo("projector parameters are not found in rosparam server, keep on trying...")
             rospy.sleep(0.2) # Sleep 0.2 seconds for waiting the parameters loading
             continue
 
     #Delete trash in param_dict
-    del param_dict['param_path']
+    # del param_dict['param_path']
     #----------   Parameters Loading  Finish ------------#
     '''
     # Conversions of parameters
