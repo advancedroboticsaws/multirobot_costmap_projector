@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <launch>
-  <node name="master_sync_lucky" pkg="master_sync_fkie" type="master_sync">
+  <node name="$(anon master_sync)" pkg="master_sync_fkie" type="master_sync">
     <!-- Performs resync after the host was offline: unregister and register again to avoid connection losses to python topic. These does not suppot reconnection! -->
     <param name="resync_on_reconnect" value="True" />
     <!-- A configurable period that controls how long the offline-online period [sec] is before the resync kicks in.
