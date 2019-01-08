@@ -4,5 +4,4 @@ string map_id
 
 string robot_id
 
-geometry_msgs/Pose2D[] footprints
-
+geometry_msgs/Polygon polygon
