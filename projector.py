@@ -5,7 +5,7 @@ import rospy
 import math
 import rospkg
 import yaml
-
+from std_msgs.msg import String
 from geometry_msgs.msg import (
     PoseArray,
     PoseStamped,
@@ -48,7 +48,7 @@ class COSTMAP_PROJECTOR():
 
         # Inputs
         self.robot_id = self.getRobotID() 
-        self.map_id = '1F' # TODO Should get from navi_center topic /current_floor 
+        self.map_id = None #'1F' # TODO Should get from navi_center topic /current_floor 
         self.resolution = 0.05 
 
         # Publish
@@ -236,6 +236,9 @@ class COSTMAP_PROJECTOR():
             self.object_to_project[msg.robot_id] = msg 
         else: 
             pass # DO nothing  
+    def map_id_CB(self, msg):
+        self.map_id = msg.data
+        print ("[CP] Switch to New map: " + str(self.map_id))
 
 CP = COSTMAP_PROJECTOR()
 
@@ -245,6 +248,7 @@ def main(args):
 
     # Subscribe 
     rospy.Subscriber('/multirobot/position', PublicFootprint, CP.multi_footprint_CB)
+    rospy.Subscriber('/currentFloor', String , CP.map_id_CB)
     rospy.Subscriber('/move_base/local_costmap/footprint', PolygonStamped, CP.self_footprint_CB)
     # Call process at 10Hz
     r = rospy.Rate(10.0)
