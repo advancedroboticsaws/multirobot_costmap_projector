@@ -1,44 +1,24 @@
 #!/usr/bin/env python
-import Queue
 import sys
 import rospy
 import math
-import rospkg
-import yaml
-from std_msgs.msg import String
+import rospkg # For get param at /service_setting
+import yaml # For get param at /service_setting
+from std_msgs.msg import String # for map_id
 from geometry_msgs.msg import (
-    PoseArray,
-    PoseStamped,
-    PoseWithCovarianceStamped,
-    PolygonStamped,
     Pose,
-    Quaternion,
-    PoseWithCovariance,
-    Twist,
-    TransformStamped,
-    Pose2D,
+    PoseArray, # for fake_obstacle_layer on costmap
+    PoseStamped, # Old 
+    PolygonStamped, # Footprint 
+    Pose2D, # Old 
 )
 import numpy as np
-from tf import transformations
+from tf import transformations # Old 
 import tf2_ros
-import time
-from multirobot_costmap_projector.msg import PublicFootprint # self-define msg type
+import time 
+from multirobot_costmap_projector.msg import PublicFootprint # self-define msg type, for /multirobot/position 
 
-def sign (x):
-    '''
-    Utility Function 
-    '''
-    if x < 0 : 
-        return -1 
-    else :
-        return 1 
-
-# map_id = "1F" # TODO Should get from navi_center topic /current_floor 
-
-# footprint= [[-0.57,0.36],[0.57,0.36],[0.57,-0.36],[-0.57,-0.36]]
-# footprint_subcribe = None 
-# resolution = 0.05 # map resolution 
-
+# footprint= [[-0.57,0.36],[0.57,0.36],[0.57,-0.36],[-0.57,-0.36]] # Static footprint 
 
 class COSTMAP_PROJECTOR():
     def __init__(self):
@@ -139,27 +119,27 @@ class COSTMAP_PROJECTOR():
             if deltaerr <= 1: # 0~45 degree
                 y = vertex_start.y
                 for i in range(int(round(abs(deltax) / self.resolution, 0))):
-                    x = vertex_start.x + i * self.resolution * sign(deltax)
+                    x = vertex_start.x + i * self.resolution * self.sign(deltax)
                     tmp_pose = Pose()
                     tmp_pose.position.x = x 
                     tmp_pose.position.y = y 
                     pos_arr.poses.append(tmp_pose) 
                     error = error + deltaerr * self.resolution
                     if error >= 0.5 * self.resolution:
-                        y = y + sign(deltay) * self.resolution
+                        y = y + self.sign(deltay) * self.resolution
                         error = error - 1 * self.resolution
             else:  # 45~90 degree
                 x = vertex_start.x
                 deltaerr = 1 / deltaerr
                 for i in range(int(round(abs(deltay) / self.resolution, 0))):
-                    y = vertex_start.y + i * self.resolution * sign(deltay)
+                    y = vertex_start.y + i * self.resolution * self.sign(deltay)
                     tmp_pose = Pose()
                     tmp_pose.position.x = x 
                     tmp_pose.position.y = y 
                     pos_arr.poses.append(tmp_pose) 
                     error = error + deltaerr * self.resolution
                     if error >= 0.5 * self.resolution:
-                        x = x + sign(deltax) * self.resolution
+                        x = x + self.sign(deltax) * self.resolution
                         error = error - 1 * self.resolution
         return 
         
@@ -210,7 +190,16 @@ class COSTMAP_PROJECTOR():
         # print "[digitalize] " , round(v_in/resolution, 0)
         v_in -= self.resolution/2
         return round(round(v_in/self.resolution, 0) *self.resolution + self.resolution/2, len(str(self.resolution))-1)
-
+    
+    def sign (self, x):
+        if x < 0 : 
+            return -1 
+        else :
+            return 1 
+    
+    ###############################
+    ###   Call Back Functions   ###
+    ###############################
     def self_footprint_CB(self, msg):
         '''
         tmp_footprint = []
@@ -231,11 +220,11 @@ class COSTMAP_PROJECTOR():
             print ("Get self_footprint but Information not fully gather yet.")
 
     def multi_footprint_CB(self, msg):
-        if msg.map_id == self.map_id: # and msg.robot_id != self.robot_id: # project it TODO  
+        if msg.map_id == self.map_id: # and msg.robot_id != self.robot_id: # project it TODO  TODO TODO self-projection 
             print (str(msg))
             self.object_to_project[msg.robot_id] = msg 
         else: 
-            pass # DO nothing  
+            pass # DO nothing
     def map_id_CB(self, msg):
         self.map_id = msg.data
         print ("[CP] Switch to New map: " + str(self.map_id))
