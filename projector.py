@@ -222,7 +222,7 @@ class COSTMAP_PROJECTOR():
     def multi_footprint_CB(self, msg):
         if msg.map_id == self.map_id and msg.robot_id != self.robot_id: # project it,  self-projection 
             # print (str(msg))
-            rospy.loginfo ("[MultiRobot_Projector] Get projection from " + str(msg.robot_id) + ".")
+            # rospy.loginfo ("[MultiRobot_Projector] Get projection from " + str(msg.robot_id) + ".")
             self.object_to_project[msg.robot_id] = msg 
         else: 
             pass # DO nothing
@@ -290,12 +290,13 @@ def main(args):
             time_now = rospy.get_rostime().to_sec()
             
             time_footprint = CP.object_to_project[i].header.stamp.to_sec()
-            rospy.loginfo("DeltaT:  " + str(time_now) + " - "+ str(time_footprint) + " = " + str(time_now - time_footprint))
-            if time_now - time_footprint > 3 : # TODO TODO TODO nned to fix the bug  # Exceed 3 sec without update, Robot Vanish, clear it from costmap
+            # rospy.loginfo("DeltaT:  " + str(time_now) + " - "+ str(time_footprint) + " = " + str(time_now - time_footprint))
+            if time_now - time_footprint > 3 : # TODO TODO TODO # Exceed 3 sec without update, Robot Vanish, clear it from costmap
                 rospy.loginfo("[MultiRobot_Projector] " + str(CP.object_to_project[i].robot_id) + " vanished.")
-                pass
+                del CP.object_to_project[i]
             else: 
                 CP.expand_footprint(pos_arr , CP.object_to_project[i].polygon)
+        rospy.loginfo ("+++++++ " + str(len(pos_arr.poses)))
         CP.projectBlockPub.publish(pos_arr)
         r.sleep()
     # Done
