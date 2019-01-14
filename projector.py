@@ -295,8 +295,9 @@ def main(args):
                 rospy.loginfo("[MultiRobot_Projector] " + str(CP.object_to_project[i].robot_id) + " vanished.")
                 del CP.object_to_project[i]
             else: 
+                rospy.loginfo("+++++" + str(i))
                 CP.expand_footprint(pos_arr , CP.object_to_project[i].polygon)
-        rospy.loginfo ("+++++++ " + str(len(pos_arr.poses)))
+        # rospy.loginfo ("+++++++ " + str(len(pos_arr.poses)))
         CP.projectBlockPub.publish(pos_arr)
         r.sleep()
     # Done
