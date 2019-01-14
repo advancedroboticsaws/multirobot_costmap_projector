@@ -293,7 +293,8 @@ def main(args):
             # rospy.loginfo("DeltaT:  " + str(time_now) + " - "+ str(time_footprint) + " = " + str(time_now - time_footprint))
             if time_now - time_footprint > 3 : # TODO TODO TODO # Exceed 3 sec without update, Robot Vanish, clear it from costmap
                 rospy.loginfo("[MultiRobot_Projector] " + str(CP.object_to_project[i].robot_id) + " vanished.")
-                del CP.object_to_project[i]
+                # continue
+                # del CP.object_to_project[i]
             else: 
                 rospy.loginfo("+++++" + str(i))
                 CP.expand_footprint(pos_arr , CP.object_to_project[i].polygon)
