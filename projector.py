@@ -217,17 +217,18 @@ class COSTMAP_PROJECTOR():
         if self.footprint.robot_id != None and self.footprint.map_id != None: 
             self.projectSyncPub.publish(self.footprint)
         else: 
-            print ("Get self_footprint but Information not fully gather yet.")
+            rospy.loginfo ("[MultiRobot_Projector] Get self_footprint, but robot_id or map_id still unknow.")
 
     def multi_footprint_CB(self, msg):
-        if msg.map_id == self.map_id: # and msg.robot_id != self.robot_id: # project it TODO  TODO TODO self-projection 
-            print (str(msg))
+        if msg.map_id == self.map_id and msg.robot_id != self.robot_id: # project it,  self-projection 
+            # print (str(msg))
+            rospy.loginfo ("[MultiRobot_Projector] Get projection from " + str(msg.robot_id) + ".")
             self.object_to_project[msg.robot_id] = msg 
         else: 
             pass # DO nothing
     def map_id_CB(self, msg):
         self.map_id = msg.data
-        print ("[CP] Switch to New map: " + str(self.map_id))
+        rospy.loginfo ("[MultiRobot_Projector] Switch to New map: " + str(self.map_id))
 
 CP = COSTMAP_PROJECTOR()
 
@@ -281,13 +282,18 @@ def main(args):
         print "footprint_transformed: ", footprint_transformed
         '''
         pos_arr = PoseArray()
+        
+        # rospy.loginfo("Current time " +  str(now.secs)  + " , "  + str(now.nsecs))
         #----- Publish Projection on costmap----#
         for i in CP.object_to_project:
             # print ("DeltaT : " + str(time.time() - i.header.stamp))
-            #if time.time() - i.header.stamp > 3 :TODO TODO TODO nned to fix the bug  # Exceed 3 sec without update, Robot Vanish, clear it from costmap
-            #    pass
-            if False: 
-                pass  
+            time_now = rospy.get_rostime().to_sec()
+            
+            time_footprint = i.header.stamp.to_sec()
+            rospy.loginfo("DeltaT:  " + str(time_now) + " - "+ str(time_footprint) + " = " + str(time_now - time_footprint))
+            if time_now - time_footprint > 3 : # TODO TODO TODO nned to fix the bug  # Exceed 3 sec without update, Robot Vanish, clear it from costmap
+                rospy.loginfo("[MultiRobot_Projector] " + str(i.robot_id) + " vanished.")
+                pass
             else: 
                 CP.expand_footprint(pos_arr , CP.object_to_project[i].polygon)
         CP.projectBlockPub.publish(pos_arr)
