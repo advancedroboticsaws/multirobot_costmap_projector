@@ -39,6 +39,7 @@ class COSTMAP_PROJECTOR():
         self.footprint = PublicFootprint() # Subscribe to /move_base/local_map/footprint
         self.object_to_project = {} # dict(), = {'AMR250#4' : 'PublishFootprint', 'AMR250#5' : 'PublishFootprint', Navi_center_fake_projection }
 
+
     def getRobotID(self):
         '''
         retrun robot_id 
@@ -214,18 +215,23 @@ class COSTMAP_PROJECTOR():
         
         self.footprint.robot_id = self.robot_id
         self.footprint.polygon = msg.polygon
-        if self.footprint.robot_id != None and self.footprint.map_id != None: 
-            self.projectSyncPub.publish(self.footprint)
-        else: 
-            rospy.loginfo ("[MultiRobot_Projector] Get self_footprint, but robot_id or map_id still unknow.")
 
+        if self.footprint.robot_id == None:
+            rospy.loginfo ("[MultiRobot_Projector] Get self_footprint, but robot_id still unknow.")
+        elif self.footprint.map_id == None: 
+            rospy.loginfo ("[MultiRobot_Projector] Get self_footprint, but map_id still unknow.")
+        else: 
+            self.projectSyncPub.publish(self.footprint)
+            
     def multi_footprint_CB(self, msg):
         if msg.map_id == self.map_id and msg.robot_id != self.robot_id: # project it,  self-projection 
-            # print (str(msg))
-            # rospy.loginfo ("[MultiRobot_Projector] Get projection from " + str(msg.robot_id) + ".")
+            #--- Logger----#
+            if msg.robot_id not in self.object_to_project or self.object_to_project[msg.robot_id] == None: # First msg
+                rospy.loginfo("[MultiRobot_Projector] Get projection from " + str(msg.robot_id) + ".") 
             self.object_to_project[msg.robot_id] = msg 
         else: 
             pass # DO nothing
+    
     def map_id_CB(self, msg):
         self.map_id = msg.data
         rospy.loginfo ("[MultiRobot_Projector] Switch to New map: " + str(self.map_id))
@@ -283,22 +289,20 @@ def main(args):
         '''
         pos_arr = PoseArray()
         
-        # rospy.loginfo("Current time " +  str(now.secs)  + " , "  + str(now.nsecs))
+
         #----- Publish Projection on costmap----#
         for i in CP.object_to_project:
-            # print ("DeltaT : " + str(time.time() - i.header.stamp))
-            time_now = rospy.get_rostime().to_sec()
-            
-            time_footprint = CP.object_to_project[i].header.stamp.to_sec()
-            # rospy.loginfo("DeltaT:  " + str(time_now) + " - "+ str(time_footprint) + " = " + str(time_now - time_footprint))
-            if time_now - time_footprint > 3 : # TODO TODO TODO # Exceed 3 sec without update, Robot Vanish, clear it from costmap
-                rospy.loginfo("[MultiRobot_Projector] " + str(CP.object_to_project[i].robot_id) + " vanished.")
-                # continue
-                # del CP.object_to_project[i]
+            if CP.object_to_project[i] == None : # Already Vanished 
+                continue
             else: 
-                rospy.loginfo("+++++" + str(i))
-                CP.expand_footprint(pos_arr , CP.object_to_project[i].polygon)
-        # rospy.loginfo ("+++++++ " + str(len(pos_arr.poses)))
+                time_now = rospy.get_rostime().to_sec()
+                time_footprint = CP.object_to_project[i].header.stamp.to_sec()
+                if time_now - time_footprint > 3 : # TODO should take out as param.yamlr  # Exceed 3 sec without update, Robot Vanish, clear it from costmap
+                    rospy.loginfo("[MultiRobot_Projector] " + str(CP.object_to_project[i].robot_id) + " vanished.")
+                    CP.object_to_project[i] = None 
+                    continue
+                else: 
+                    CP.expand_footprint(pos_arr , CP.object_to_project[i].polygon) # This function will append PoseArray to pos_arr
         CP.projectBlockPub.publish(pos_arr)
         r.sleep()
     # Done
