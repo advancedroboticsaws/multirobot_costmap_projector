@@ -289,10 +289,10 @@ def main(args):
             # print ("DeltaT : " + str(time.time() - i.header.stamp))
             time_now = rospy.get_rostime().to_sec()
             
-            time_footprint = i.header.stamp.to_sec()
+            time_footprint = CP.object_to_project[i].header.stamp.to_sec()
             rospy.loginfo("DeltaT:  " + str(time_now) + " - "+ str(time_footprint) + " = " + str(time_now - time_footprint))
             if time_now - time_footprint > 3 : # TODO TODO TODO nned to fix the bug  # Exceed 3 sec without update, Robot Vanish, clear it from costmap
-                rospy.loginfo("[MultiRobot_Projector] " + str(i.robot_id) + " vanished.")
+                rospy.loginfo("[MultiRobot_Projector] " + str(CP.object_to_project[i].robot_id) + " vanished.")
                 pass
             else: 
                 CP.expand_footprint(pos_arr , CP.object_to_project[i].polygon)
